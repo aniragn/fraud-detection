@@ -1,30 +1,42 @@
-# GitHub Actions – CI/CD Pipeline
-# Fraud Detection API
-#
-# This workflow must:
-#   1. Run the tests on every push to 'prod'
-#   2. If tests pass, trigger a redeploy on Render
-
-name: CI/CD - Fraud Detection
+name: CI/CD – Fraud Detection API
 
 on:
   push:
-    branches:
-      - prod
+    branches: [main, prod]
   pull_request:
-    branches:
-      - prod
+    branches: [prod]
 
 jobs:
+  # ── Job 1: Run tests on every push/PR ─────────────────────────────────────
   test:
     runs-on: ubuntu-latest
-    steps:
-      # TODO: write the steps to install dependencies, train the model, and run the tests
+    defaults:
+      run:
+        working-directory: backend
 
-  deploy-backend:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/prod'
     steps:
-      # TODO: write the step that triggers the Render deploy hook
-      #       the URL must be stored as a GitHub secret, not hardcoded here
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Train model (tests require it)
+        run: python model/train.py
+
+      - name: Run tests
+        run: pytest tests/ -v
+
+  # ── Job 2: Deploy to Render (only on push to prod, after tests pass) ───────
+  deploy-backend:
+    needs: test                    # waits for "test" job to succeed first
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/prod' && github.event_name == 'push'
+
+    steps:
+      - name: Trigger Render deploy hook
+        run: curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
