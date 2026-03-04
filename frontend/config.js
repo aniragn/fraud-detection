@@ -3,5 +3,5 @@
  * ⚠️  STUDENTS: replace the URL below with your own Render service URL.
  */
 const CONFIG = {
-    API_URL: "https://fraud-detection-git-prod-aniragns-projects.vercel.app",   // ← change this
+    API_URL: "https://fraud-detection-g9nc.onrender.com",
 };
